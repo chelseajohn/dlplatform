@@ -48,9 +48,13 @@ class LearningLogger():
         ----------
         lossValue
         '''
+        header = "Time\t\t\tLossValue \n"
         logFilePath = os.path.join(self._logpath, self._learnerLossFile)
+
         with open(logFilePath, 'a') as output:
-            output.write('%.3f\t%.8f\n' % (time.time(), lossValue))
+            if(os.path.getsize(logFilePath)== 0):
+                output.write(header)
+            output.write('%.3f\t\t%.8f\n' % (time.time(), lossValue))
 
     def logPredictionsLabels(self, predictions: list, labels: list):
         '''
@@ -62,17 +66,20 @@ class LearningLogger():
         predictions - list of predictions made by a worker
         labels - true labels corresponding to predictions
         '''
+        header = "Time\t\t\t Predictions\t\t\t\t\t\t\t\t\t\t\t\t\t Label\n"
         logFilePath = os.path.join(self._logpath, self._learnerPredLabelFile)
         with open(logFilePath, 'a') as output:
+            if(os.path.getsize(logFilePath)== 0):  
+                output.write(header)
             for i in range(len(predictions)):
                 if isinstance(labels[i], int) and isinstance(predictions[i], int):
-                    output.write('%.3f\t%s\t%s\n' % (time.time(), str(predictions[i]), str(labels[i])))
+                    output.write('%.3f\t\t%s\t\t%s\n' % (time.time(), str(predictions[i]), str(labels[i])))
                 elif isinstance(labels[i], float) and isinstance(predictions[i], float):
-                    output.write('%.3f\t%s\t%s\n' % (time.time(), str(predictions[i]), str(labels[i])))
+                    output.write('%.3f\t\t%s\t\t%s\n' % (time.time(), str(predictions[i]), str(labels[i])))
                 elif isinstance(labels[i], int) and not isinstance(predictions[i], int):
-                    output.write('%.3f\t%s\t%s\n' % (time.time(), ','.join(map(str, predictions[i])), str(labels[i])))
+                    output.write('%.3f\t\t%s\t\t%s\n' % (time.time(), ','.join(map(str, predictions[i])), str(labels[i])))
                 else:
-                    output.write('%.3f\t%s\t%s\n' % (time.time(),
+                    output.write('%.3f\t\t%s\t\t%s\n' % (time.time(),
                         ','.join(map(str, predictions[i])), ','.join(map(str, labels[i]))))
 
     def logViolation(self, localConditionMsg: str, localConditionHolds: bool):
@@ -87,10 +94,13 @@ class LearningLogger():
             if log level is DEBUG all the checks are written
             otherwise only violation (i.e. when it is False) is logged
         '''
+        header = "Time\t\t\t Condiiton\t\t\t Message \n"
         logFilePath = os.path.join(self._logpath, self._learnerViolationsFile)
         with open(logFilePath, 'a') as output:
+            if(os.path.getsize(logFilePath)== 0):  
+                output.write(header)
             if self._logLevel == 'DEBUG' or not localConditionHolds:
-                output.write('%.3f\t%i\t%s\n' % (time.time(), not localConditionHolds, localConditionMsg))
+                output.write('%.3f\t\t%i\t\t%s\n' % (time.time(), not localConditionHolds, localConditionMsg))
 
     def logBalancing(self, flags: dict, violationNodes: list, balancingSet: list):
         '''
@@ -105,13 +115,16 @@ class LearningLogger():
         violationNodes - nodes in violation
         balancingSet - nodes that performed balancing
         '''
+        header = "Time\t\t\tSync\t\t\tViolationNode\t\tBalancingSet\n"
         logFilePath = os.path.join(self._logpath, self._learnerBalancingFile)
         if flags.get('setReference') is None:
             fullSync = False
         else:
             fullSync = flags['setReference']
         with open(logFilePath, 'a') as output:
-            output.write('%.3f\t%i\t%s\t%s\n' % (time.time(), fullSync,
+            if(os.path.getsize(logFilePath)== 0):   
+                output.write(header)
+            output.write('%.3f\t\t%i\t\t\t%s\t\t\t%s\n' % (time.time(), fullSync,
                 ','.join(map(str, violationNodes)), ','.join(map(str, balancingSet))))
 
     def logAveragedModel(self, nodes : List[int], params: Parameters, flags:dict):
@@ -139,7 +152,7 @@ class LearningLogger():
             else:
                 filename = 'currentAveragedState'
                 self.logModel(filename = filename, params = params)
-                #np.save(os.path.join(self._logpath, 'currentAveragedWeights'), params.get())
+                np.save(os.path.join(self._logpath, 'coordinatortAveragedWeights'+ str(time.time()), params.get()))
 
     def logModel(self, filename : str, params: Parameters):
         '''
@@ -151,6 +164,21 @@ class LearningLogger():
         params - weights of an averaged model
         '''
         pickle.dump(params, open(os.path.join(self._logpath, filename), 'wb'))
+
+
+
+    def logIntermediateModel(self,param: Parameters):
+        '''
+        Logs intermediate model, i.e., saves the parameters of intermediate model
+
+        Parameters
+        ----------
+        params - weights of an averaged model
+        '''
+        filename = 'IntermediateState_' +str(time.time())
+        np.save(os.path.join(self._logpath, filename), param.get())
+
+
 
     '''
     All the messages are logged with exchange used, topic used, identifier of the node if
@@ -169,11 +197,14 @@ class LearningLogger():
         size of the message
         direction
         '''
+        header = "Time\t\t\tExchange\t\tTopic\t\tIdentifier\t\tMsg_size\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerViolationsFile)
 
 
         with open(logFilePath, 'a') as output:
-            output.write('%.3f\t%s\t%s\t%s\t%s\t%s\n' % (time.time(), 
+            if(os.path.getsize(logFilePath)== 0): 
+                output.write(header)
+            output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
 
     def logRegistrationMessage(self, exchange: str, topic: str, identifier, message_size: int, direction: str):
@@ -187,9 +218,12 @@ class LearningLogger():
         identifier of the worker that is registered
         direction
         '''
+        header = "Time\t\t\tExchange\t\tTopic\t\tIdentifier\t\tMsg_size\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerRegistrationsFile)
         with open(logFilePath, 'a') as output:
-            output.write('%.3f\t%s\t%s\t%s\t%s\t%s\n' % (time.time(), 
+            if(os.path.getsize(logFilePath)== 0):    
+                output.write(header)
+            output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
 
     def logDeregistrationMessage(self, exchange: str, topic: str, identifier, message_size: int, direction: str):
@@ -203,9 +237,12 @@ class LearningLogger():
         identifier of the worker that is deregistered
         direction
         '''
+        header = "Time\t\t\tExchange\t\t\tTopic\t\tIdentifier\t\tMsg_size\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerRegistrationsFile)
         with open(logFilePath, 'a') as output:
-            output.write('%.3f\t%s\t%s\t%s\t%s\t%s\n' % (time.time(), 
+            if(os.path.getsize(logFilePath)== 0):     
+                output.write(header)
+            output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
 
     def logBalancingMessage(self, exchange: str, topic: str, identifier, message_size: int, direction: str):
@@ -219,9 +256,12 @@ class LearningLogger():
         identifier of the worker that is sending the parameters for balancing process
         direction
         '''
+        header = "Time\t\t\tExchange\t\t\tTopic\t\tIdentifier\t\tMsg_size\t\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerBalancingFile)
         with open(logFilePath, 'a') as output:
-            output.write('%.3f\t%s\t%s\t%s\t%s\t%s\n' % (time.time(), 
+            if(os.path.getsize(logFilePath)== 0):   
+                output.write(header)
+            output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
 
     def logBalancingRequestMessage(self, exchange: str, topic: str, message_size: int, direction: str, workerId = None):
@@ -235,13 +275,16 @@ class LearningLogger():
         workerId of the worker that is requested. When the message is received we log the workerId,
             otherwise it is in the topic
         direction
-        '''
+       '''
+        header = "Time\t\t\tExchange\t\t\tTopic\t\tMsg_size\t\tDirection\t\tWorkerID\n"
         logFilePath = os.path.join(self._logpath, self._learnerBalancingRequestFile)
         with open(logFilePath, 'a') as output:
+            if(os.path.getsize(logFilePath)== 0):  
+                output.write(header)
             if workerId is None:
-                output.write('%.3f\t%s\t%s\t%s\t%s\n' % (time.time(), exchange, topic, str(message_size), direction))
+                output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), exchange, topic, str(message_size), direction,"-"))
             else:
-                output.write('%.3f\t%s\t%s\t%s\t%s\t%s\n' % (time.time(), 
+                output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                     exchange, topic, str(message_size), direction, workerId))
         
     def logSendModelMessage(self, exchange: str, topic: str, message_size: int, direction: str, workerId = None):
@@ -255,10 +298,13 @@ class LearningLogger():
         workerId of the worker that is getting the model
         direction
         '''
+        header = "Time\t\t\tExchange\t\tTopic\t\tMsg_size\tDirection\tWorkerID\n"
         logFilePath = os.path.join(self._logpath, self._learnerSendModelFile)
         with open(logFilePath, 'a') as output:    
+            if(os.path.getsize(logFilePath)== 0):     
+                output.write(header)
             if workerId is None:
-                output.write('%.3f\t%s\t%s\t%s\t%s\n' % (time.time(), exchange, topic, str(message_size), direction))
+                output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t%s\t\t\t%s\n' % (time.time(), exchange, topic, str(message_size), direction,"-"))
             else:
-                output.write('%.3f\t%s\t%s\t%s\t%s\t%s\n' % (time.time(), exchange, topic, str(message_size), direction, workerId))
+                output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t%s\t\t\t%s\n' % (time.time(), exchange, topic, str(message_size), direction, workerId))
 
