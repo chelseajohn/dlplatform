@@ -236,6 +236,7 @@ class Worker(baseClass):
             param = message['param']
             flags = message['flags']
             self._learner.setModel(param, flags)
+            self._communicator.learningLogger.logIntermediateModel(param) #logs the intermediate model
         if 'request' in routing_key:
             body_size = 0
             self._communicator.learningLogger.logBalancingRequestMessage(exchange, routing_key,body_size, 'receive', self.getIdentifier())
@@ -338,7 +339,6 @@ class Worker(baseClass):
         # dataScheduler is for individual setup of giving data to the worker
         # it is running in its own process since the data is constantly generated, independent from the learner
         self._dataScheduler.daemon = True
-
         # communicator runs in thread to consume the queue of the worker
         self._communicator.initiate(exchange = self._communicator._exchangeNodes,
                                     topics = ["#."+self.getIdentifier()+".#", "#."+self.getIdentifier()])
