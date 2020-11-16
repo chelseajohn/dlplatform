@@ -236,7 +236,7 @@ class Worker(baseClass):
             param = message['param']
             flags = message['flags']
             self._learner.setModel(param, flags)
-            self._communicator.learningLogger.logIntermediateModel(param) #logs the intermediate model
+            self._communicator.learningLogger.logIntermediateModel(param,1)  #logs the after intermediate model
         if 'request' in routing_key:
             body_size = 0
             self._communicator.learningLogger.logBalancingRequestMessage(exchange, routing_key,body_size, 'receive', self.getIdentifier())
