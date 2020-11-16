@@ -39,6 +39,16 @@ class LearningLogger():
         self._logpath = os.path.join(self._path, self._id)
         if not os.path.isdir(self._logpath):
             os.mkdir(self._logpath)
+        self._logModel_path_before = os.path.join(self._logpath, 'before')
+        if not os.path.isdir(self._logModel_path_before):
+            os.mkdir(self._logModel_path_before)
+        self._logModel_path_after = os.path.join(self._logpath, 'after')
+        if not os.path.isdir(self._logModel_path_after):
+            os.mkdir(self._logModel_path_after)
+       
+       
+
+
 
     def logLearnerLoss(self, lossValue: float):
         '''
@@ -69,7 +79,7 @@ class LearningLogger():
         header = "Time\t\t\t Predictions\t\t\t\t\t\t\t\t\t\t\t\t\t Label\n"
         logFilePath = os.path.join(self._logpath, self._learnerPredLabelFile)
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):  
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             for i in range(len(predictions)):
                 if isinstance(labels[i], int) and isinstance(predictions[i], int):
@@ -97,7 +107,7 @@ class LearningLogger():
         header = "Time\t\t\t Condiiton\t\t\t Message \n"
         logFilePath = os.path.join(self._logpath, self._learnerViolationsFile)
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):  
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             if self._logLevel == 'DEBUG' or not localConditionHolds:
                 output.write('%.3f\t\t%i\t\t%s\n' % (time.time(), not localConditionHolds, localConditionMsg))
@@ -122,7 +132,7 @@ class LearningLogger():
         else:
             fullSync = flags['setReference']
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):   
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             output.write('%.3f\t\t%i\t\t\t%s\t\t\t%s\n' % (time.time(), fullSync,
                 ','.join(map(str, violationNodes)), ','.join(map(str, balancingSet))))
@@ -152,7 +162,7 @@ class LearningLogger():
             else:
                 filename = 'currentAveragedState'
                 self.logModel(filename = filename, params = params)
-                np.save(os.path.join(self._logpath, 'coordinatortAveragedWeights'+ str(time.time()), params.get()))
+                #np.save(os.path.join(self._logpath, 'currentAveragedWeights'), params.get())
 
     def logModel(self, filename : str, params: Parameters):
         '''
@@ -167,18 +177,21 @@ class LearningLogger():
 
 
 
-    def logIntermediateModel(self,param: Parameters):
-        '''
-        Logs intermediate model, i.e., saves the parameters of intermediate model if 
-        log level is DEBUG
+    def logIntermediateModel(self,param: Parameters,checks):
+         '''
+         Logs the intermediate model ,i.e, saves the parameters of a model
 
-        Parameters
-        ----------
-        params - weights of an averaged model
-        '''
-        if self._logLevel == 'DEBUG':
-            filename = 'IntermediateState_' +str(time.time())
-            np.save(os.path.join(self._logpath, filename), param.get())
+         Parameters
+         _________
+         params - weights of an averaged model
+         '''
+
+         if checks == 0:
+             filename = 'IntermediateState_before_' +str(time.time())
+             np.save(os.path.join(self._logModel_path_before, filename), param.get())
+         else:
+             filename = 'IntermediateState_after_' + str(time.time())
+             np.save(os.path.join(self._logModel_path_after, filename), param.get())
 
 
 
@@ -204,7 +217,7 @@ class LearningLogger():
 
 
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0): 
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
@@ -223,7 +236,7 @@ class LearningLogger():
         header = "Time\t\t\tExchange\t\tTopic\t\tIdentifier\t\tMsg_size\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerRegistrationsFile)
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):    
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
@@ -242,7 +255,7 @@ class LearningLogger():
         header = "Time\t\t\tExchange\t\t\tTopic\t\tIdentifier\t\tMsg_size\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerRegistrationsFile)
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):     
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
@@ -261,7 +274,7 @@ class LearningLogger():
         header = "Time\t\t\tExchange\t\t\tTopic\t\tIdentifier\t\tMsg_size\t\tDirection\n"
         logFilePath = os.path.join(self._logpath, self._learnerBalancingFile)
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):   
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), 
                 exchange, topic, str(identifier), str(message_size), direction))
@@ -281,7 +294,7 @@ class LearningLogger():
         header = "Time\t\t\tExchange\t\t\tTopic\t\tMsg_size\t\tDirection\t\tWorkerID\n"
         logFilePath = os.path.join(self._logpath, self._learnerBalancingRequestFile)
         with open(logFilePath, 'a') as output:
-            if(os.path.getsize(logFilePath)== 0):  
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             if workerId is None:
                 output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t\t%s\t\t\t%s\n' % (time.time(), exchange, topic, str(message_size), direction,"-"))
@@ -303,7 +316,7 @@ class LearningLogger():
         header = "Time\t\t\tExchange\t\tTopic\t\tMsg_size\tDirection\tWorkerID\n"
         logFilePath = os.path.join(self._logpath, self._learnerSendModelFile)
         with open(logFilePath, 'a') as output:    
-            if(os.path.getsize(logFilePath)== 0):     
+            if(os.path.getsize(logFilePath)== 0):
                 output.write(header)
             if workerId is None:
                 output.write('%.3f\t\t%s\t\t%s\t\t%s\t\t%s\t\t\t%s\n' % (time.time(), exchange, topic, str(message_size), direction,"-"))
