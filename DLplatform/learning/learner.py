@@ -9,7 +9,7 @@ import sys
 
 class Learner(baseClass):
     '''
-    Abstract class defining the structure of a IncrementalLearner. This includes batch and online learners.
+    Abstract class defining the structure of a learner. This is the basis for batch and incremental learners.
 
     '''
     __metaclass__ = ABCMeta
@@ -25,6 +25,7 @@ class Learner(baseClass):
         self._learningLogger            = None
         self._communicator              = None
         self._synchronizer              = None
+        self._stop                      = False
         
     def setIdentifier(self, identifier):
         '''
@@ -78,14 +79,29 @@ class Learner(baseClass):
         self._learningLogger = logger
         
     def stopExecution(self):
+        '''
+        Sends a deregistration message to the coordinator and sets the _stop-flag to true, which signals
+        the worker that the learner has stopped execution and triggers the worker to 
+        shut down all processes: itself (including the learner), the datascheduler, and the communicato.
+        '''
         if self._communicator is None:
             self.error("No communicator is set")
             raise AttributeError("No communicator is set")
 
         self.info("Stopping criterion was met, sending suicide note to coordinator")
         self._communicator.sendDeregistration(self._identifier, self.getParameters())
-        sys.exit()
+        self._stop = True
+    
+    def isAlive(self):
+        '''
+        The function signals to the worker whether the learner is still operating or has stopped execution.
+        Returns
+        -------
+        boolean - true if the learner is running and continues operating, false if stopExecution has been called
         
+        '''
+        return not self_stop
+    
     def setModel(self, param : Parameters, flags: dict):
         '''
         Function for updating the learner parameters either when registred or when 
@@ -381,7 +397,7 @@ class BatchLearner(Learner):
         self._isInitialized             = True
         self._parametersRequested       = False
         self._waitingForAModel          = False
-        self._stop                      = False
+        self._batchTrainingCompleted    = False
         self._trainingBatch             = []
         self._seenExamples              = 0
         
@@ -395,9 +411,9 @@ class BatchLearner(Learner):
         boolean value, defining allowance to accept training data
 
         '''
-        if self._stop and not self._waitingForAModel: #as soon as the stopping criterion is met and the aggregate model is set, the learner is stopped
+        if self._batchTrainingCompleted and not self._waitingForAModel: #as soon as the stopping criterion is met and the aggregate model is set, the learner is stopped
             self.stopExecution()
-        return self._isInitialized and not self._isTraining and not self._stop and not self._waitingForAModel
+        return self._isInitialized and not self._isTraining and not self._batchTrainingCompleted and not self._waitingForAModel
     
     def obtainData(self, example: tuple):
         '''
@@ -432,10 +448,25 @@ class BatchLearner(Learner):
             #batch learners report a violation whenever they finished training. 
             #The model is send once, aggregated and redistributed, then the learner stops.
             self.reportViolation()
-            self._stop = True
+            self._batchTrainingCompleted = True
             self._isTraining = False
             
-            
+    def isAlive(self):
+        '''
+        The function signals to the worker whether the learner is still operating or has stopped execution.
+        In addition to checking whether to learner has already called stopExecution, for the BatchLearner the 
+        function also checks whether batch training is completed and a model was received. 
+        In that case, the stopExectution is called.
+        Returns
+        -------
+        boolean - true if the learner is running and continues operating, false if stopExecution has been called
+        
+        '''
+        if self._batchTrainingCompleted and not self._waitingForAModel: #as soon as the stopping criterion is met and the aggregate model is set, the learner is stopped
+            self.stopExecution()
+        return Learner.isAlive(self)
+    
+          
     def train(self, data: List) -> List:
         '''
         Training
@@ -462,6 +493,6 @@ class BatchLearner(Learner):
         '''
         Learner.answerParameterRequest(self)
         self._parametersRequested = True
-        if self._stop and not self._waitingForAModel:
+        if self._batchTrainingCompleted and not self._waitingForAModel:
             self.stopExecution()
 

@@ -242,6 +242,10 @@ class Worker(baseClass):
             self._communicator.learningLogger.logBalancingRequestMessage(exchange, routing_key,body_size, 'receive', self.getIdentifier())
             self.info("Coordinator asks for parameters to balance violation")
             self._learner.answerParameterRequest()
+        if 'exit' in routing_key:
+            body_size = 0
+            self.info("Coordinator stops the execution")
+            self._learner.stopExecution()
 
     def checkInterProcessCommunication(self):
         '''
@@ -357,12 +361,15 @@ class Worker(baseClass):
         # only now we should request for initial model - or we will not be able to receive the answer
         self._learner.requestInitialModel()
 
-        while True:
+        while self._learner.isAlive():
             self.checkInterProcessCommunication()
             if len(self._dataBuffer) > 0:
                 if self._learner.canObtainData():
                     self._learner.obtainData(self._dataBuffer[0])
                     del(self._dataBuffer[0])
 
+        self._dataScheduler.terminate()
         self._dataScheduler.join()
+        self._communicator.terminate()
         self._communicator.join()
+        print('worker ',self._identifier,' shut down.')
