@@ -241,7 +241,17 @@ class Coordinator(baseClass):
                     self._communicator.sendAggregatedModel(identifiers = [worker_id], param = self._waitingNodes[worker_id], flags = {"setReference":True})
                 self._waitingNodes.clear()
                 # we want to allow to wait for 10 nodes, but then others to join dynamically
+
+                self._minStartNodes = 0
+
+                for worker_id in self._waitingNodes:
+                    time.sleep(0.1)#without the sleep rabbitMQ gets congested and messages do not get delivered to nodes (occurred with 21 nodes and BatchLearners)
+                    self._communicator.sendAggregatedModel(identifiers = [worker_id], param = self._waitingNodes[worker_id], flags = {"setReference":True})
+                self._waitingNodes.clear()
+                # we want to allow to wait for 10 nodes, but then others to join dynamically
                 self._minStartNodes = 1
+
+
             #TODO: maybe we have to check the balancing set here again. 
             #If a node registered, while we are doing a full sync, or a balancing operation, 
             #we might need to check. But then, maybe it's all ok like this.
@@ -324,6 +334,9 @@ class Coordinator(baseClass):
                 elif not params is None:
                     # we do not want to update the nodes that are already inactive
                     nodesToSendAvg = list(set(nodes) & set(self._activeNodes))
+
+                    self._communicator.sendAveragedModel(nodesToSendAvg, params, flags)
+
                     self._communicator.sendAggregatedModel(nodesToSendAvg, params, flags)
                     self._learningLogger.logBalancing(flags, self._nodesInViolation, list(self._balancingSet.keys()))
                     self._learningLogger.logAveragedModel(nodes, params, flags)
