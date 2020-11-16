@@ -112,7 +112,7 @@ class Learner(baseClass):
             error_text = "The argument param is not of type" + str(Parameters) + "it is of type " + str(type(param))
             self.error(error_text)
             raise ValueError(error_text)
-        self._communicator.learningLogger.logIntermediateModel(param, checks=0) ## logging the model before updating
+        self._communicator.learningLogger.logIntermediateModel(param, checks=0) ## logging the intermediate model before updating
         self.info("received a model update")
         self.setParameters(param)
         self.info("replacing current model with updated one")
