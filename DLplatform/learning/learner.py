@@ -92,7 +92,6 @@ class Learner(baseClass):
         balancing was performed and coordinator returned a new averaged model
         In case when full synchronization was performed the reference model
         is also set.
-        In the DEBUG mode, intermediate models before model update are also logged
 
         Parameters
         ----------
