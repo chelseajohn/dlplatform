@@ -169,14 +169,16 @@ class LearningLogger():
 
     def logIntermediateModel(self,param: Parameters):
         '''
-        Logs intermediate model, i.e., saves the parameters of intermediate model
+        Logs intermediate model, i.e., saves the parameters of intermediate model if 
+        log level is DEBUG
 
         Parameters
         ----------
         params - weights of an averaged model
         '''
-        filename = 'IntermediateState_' +str(time.time())
-        np.save(os.path.join(self._logpath, filename), param.get())
+        if self._logLevel == 'DEBUG':
+            filename = 'IntermediateState_' +str(time.time())
+            np.save(os.path.join(self._logpath, filename), param.get())
 
 
 
