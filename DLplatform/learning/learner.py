@@ -92,6 +92,7 @@ class Learner(baseClass):
         balancing was performed and coordinator returned a new averaged model
         In case when full synchronization was performed the reference model
         is also set.
+        In the DEBUG mode, intermediate models before model update are also logged
 
         Parameters
         ----------
@@ -112,7 +113,7 @@ class Learner(baseClass):
             error_text = "The argument param is not of type" + str(Parameters) + "it is of type " + str(type(param))
             self.error(error_text)
             raise ValueError(error_text)
-
+        self._communicator.learningLogger.logIntermediateModel(param, checks=0) ## logging the model before updating
         self.info("received a model update")
         self.setParameters(param)
         self.info("replacing current model with updated one")
