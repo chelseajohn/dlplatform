@@ -236,10 +236,12 @@ class Coordinator(baseClass):
             # we send around the initial parameters only when all the expected nodes are there
             # in case when parameter is not set, it is equal to 0 - so every new node will satisfy the condition
             if len(self._waitingNodes) >= self._minStartNodes:
-                for id in self._waitingNodes:
-                    self._communicator.sendAveragedModel(identifiers = [id], param = self._waitingNodes[id], flags = {"setReference":True})
+                for worker_id in self._waitingNodes:
+                    time.sleep(0.1)#without the sleep rabbitMQ gets congested and messages do not get delivered to nodes (occurred with 21 nodes and BatchLearners)
+                    self._communicator.sendAggregatedModel(identifiers = [worker_id], param = self._waitingNodes[worker_id], flags = {"setReference":True})
                 self._waitingNodes.clear()
                 # we want to allow to wait for 10 nodes, but then others to join dynamically
+
                 self._minStartNodes = 0
 
                 for worker_id in self._waitingNodes:
@@ -248,6 +250,7 @@ class Coordinator(baseClass):
                 self._waitingNodes.clear()
                 # we want to allow to wait for 10 nodes, but then others to join dynamically
                 self._minStartNodes = 1
+
 
             #TODO: maybe we have to check the balancing set here again. 
             #If a node registered, while we are doing a full sync, or a balancing operation, 
@@ -331,7 +334,9 @@ class Coordinator(baseClass):
                 elif not params is None:
                     # we do not want to update the nodes that are already inactive
                     nodesToSendAvg = list(set(nodes) & set(self._activeNodes))
+
                     self._communicator.sendAveragedModel(nodesToSendAvg, params, flags)
+
                     self._communicator.sendAggregatedModel(nodesToSendAvg, params, flags)
                     self._learningLogger.logBalancing(flags, self._nodesInViolation, list(self._balancingSet.keys()))
                     self._learningLogger.logAveragedModel(nodes, params, flags)
