@@ -107,7 +107,14 @@ class Communicator(baseClass, Process):
 
         raise NotImplementedError
 
-    def sendAveragedModel(self, identifiers : List[str], param : Parameters, flags: dict):
+    def sendExitRequest(self, identifier : str):
+        '''
+        Publish message to ask the worker to finish its process
+        '''
+
+        raise NotImplementedError
+
+    def sendAggregatedModel(self, identifiers : List[str], param : Parameters, flags: dict):
         '''
         Publish message to send an averaged model to the nodes
         '''
